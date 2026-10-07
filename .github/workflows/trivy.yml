@@ -1,0 +1,44 @@
+name: "Docker Build & Trivy Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-scan:
+    name: Build and Scan Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t devsecops-tp:${{ github.sha }} .
+
+      - name: Run Trivy vulnerability scanner (report, non blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devsecops-tp:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Trivy vulnerability scanner (blocking on CRITICAL)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devsecops-tp:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL'
+          exit-code: '1'
