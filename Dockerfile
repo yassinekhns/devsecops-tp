@@ -1,5 +1,5 @@
 # VULNERABILITE VOLONTAIRE : image de base ancienne et non patchee
-FROM python:3.9-slim
+FROM python:3.15-slim
 
 WORKDIR /app
 
